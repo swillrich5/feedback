@@ -2,27 +2,30 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.views import View
 from django.views.generic.base import TemplateView
+from django.views.generic import ListView, DetailView
+from django.views.generic.edit import FormView
 
 from .forms import ReviewForm
 from .models import Review
 
 # Create your views here.
 
-class ReviewView(View):
-    def get(self, request):
-        form = ReviewForm()
+class ReviewView(FormView):
+    form_class = ReviewForm
+    template_name = "reviews/review.html"
+    success_url = "/thank-you"
 
-        return render(request, "reviews/review.html", {
-            "form": form
-        })
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
 
-    def post(self, request):
-        form = ReviewForm(request.POST)
+    # def post(self, request):
+    #     form = ReviewForm(request.POST)
 
-        if form.is_valid():
-            print(form.cleaned_data)
-            form.save()
-            return HttpResponseRedirect("/thank-you")
+    #     if form.is_valid():
+    #         print(form.cleaned_data)
+    #         form.save()
+    #         return HttpResponseRedirect("/thank-you")
 
 
 def review(request):
@@ -50,22 +53,17 @@ class ThankYouView(TemplateView):
         return context
 
 
-class ReviewsListView(TemplateView):
+class ReviewsListView(ListView):
     template_name = "reviews/review_list.html"
+    model =  Review
+    context_object_name = "reviews"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        reviews = Review.objects.all()
-        context["reviews"] = reviews
-        return context
+    def get_queryset(self):                         # allows to filter the data returned
+        base_query = super().get_queryset()         # in this case reviews with ratings 
+        data = base_query.filter(rating__gte=4)     # that are greater than or equal to 4
+        return data
 
 
-class SingleReviewView(TemplateView):
+class SingleReviewView(DetailView):
     template_name = "reviews/single_review.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        review_id = kwargs["id"]
-        selected_review = Review.objects.get(pk=review_id)
-        context["review"] = selected_review
-        return context
+    model = Review
