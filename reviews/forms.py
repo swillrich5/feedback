@@ -19,3 +19,9 @@ class ReviewForm(forms.ModelForm):
             "review_text": "Your Feedback",
             "rating": "Your Rating"
         }
+        error_messages = {
+            "user_name": {
+                "required": "You must fill out the username field",
+                "max_length": "Please enter a shorter name.",
+            }
+        }
